@@ -4,6 +4,11 @@ from model.pca import pca
 import os
 
 
+# TODO(hlc): autoencoder.
+# TODO(hlc): load pretrained model 3.return embedding.
+# TODO(hlc): return embedding
+
+
 class Img2Vec:
     def __init__(self):
         self.embedding_dim = 256
@@ -30,10 +35,13 @@ class Img2Vec:
         return build_char_data(char_dict, image_dim, self.font_path)
 
     def _train(self, data_path, fname):
+        result = []
         if self.method == "pca":
-            pca(self.embedding_dim, data_path=data_path, fname=fname)
+            result = pca(self.embedding_dim, data_path=data_path, fname=fname)
         elif self.method == "autoencoder":
-            pass
+            result = autoencoder(self.embedding_dim, data_path=data_path, fname=fname)
+        assert result is not None
+        return result
 
     def fit(self, data, fname, embedding_dim=None, method=None):
         if embedding_dim is not None:
