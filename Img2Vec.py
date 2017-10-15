@@ -1,15 +1,16 @@
 from utils import *
+from model.autoencoder import autoencoder
+from model.pca import pca
 import os
 
 
 class Img2Vec:
     def __init__(self):
-        self.language = "sc"
         self.embedding_dim = 256
         self.method = "pca"
         self.image_dim = (36, 36)
         self._method = ["pca", "autoencoder"]
-        self.font_path = "./fonts/NotoSansCJK{}-Regular.otf".format(self.language)
+        self.font_path = "./fonts/NotoSansCJKsc-Regular.otf"
 
     def build_char_dataset(self, char_dict, image_dim=None, language=None, font_path=None):
         if image_dim is not None:
@@ -18,11 +19,6 @@ class Img2Vec:
             if len(image_dim) != 2:
                 raise ValueError("The tuple must be 2-D tuple not {}-D tuple!".format(len(image_dim)))
             self.image_dim = image_dim
-        if language is not None:
-            if not isinstance(language, str):
-                raise TypeError("The language must be string not {}!".format(type(language)))
-            else:
-                self.language = language
         if font_path is not None:
             if not isinstance(font_path, str):
                 raise TypeError("The path of font must be string not {}!".format(type(font_path)))
@@ -30,13 +26,16 @@ class Img2Vec:
                 raise OSError("{} does not exist!".format(font_path))
             else:
                 self.font_path = font_path
+        print(font_path)
+        return build_char_data(char_dict, image_dim, self.font_path)
 
-
-    def _train(self):
+    def _train(self, data_path, fname):
         if self.method == "pca":
+            pca(self.embedding_dim, data_path=data_path, fname=fname)
+        elif self.method == "autoencoder":
             pass
 
-    def fit(self, embedding_dim=None, method=None):
+    def fit(self, data, fname, embedding_dim=None, method=None):
         if embedding_dim is not None:
             self.embedding_dim = embedding_dim
         if method is not None:
@@ -48,8 +47,16 @@ class Img2Vec:
             raise TypeError("Embedding dimension must be int not {}!".format(type(self.embedding_dim)))
         if self.method not in self._method:
             raise ValueError("{} is not supported!".format(self.method))
+        if data is not None:
+            if not isinstance(data, str):
+                raise TypeError("The path of images must be string not {}!".format(type(data)))
+            if not os.path.exists(data):
+                raise OSError("{} does not exist!".format(data))
+        if fname is not None:
+            if not isinstance(fname, str):
+                raise TypeError("The path of font must be string not {}!".format(type(fname)))
 
-        self._train()
+        self._train(data, fname)
 
     def load(self):
         pass

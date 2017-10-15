@@ -1,6 +1,7 @@
 import traceback
 import os
 import uuid
+import numpy as np
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
@@ -16,19 +17,35 @@ def _check_x(x):
         raise ValueError("The item of X is Null!")
 
 
-def build_char_data(char_dict, image_dim, language, font_path):
+def build_char_data(char_dict, image_dim, font_path):
     _check_x(char_dict)
-    font = ImageFont.truetype(font_path, 36)
+    font = ImageFont.truetype(font_path, 29)
     if not os.path.exists("./data"):
         os.mkdir("./data")
-    path = os.path.join("./data", uuid.uuid1())
+    path = os.path.join("./data", uuid.uuid1().hex)
     try:
         os.mkdir(path)
     except OSError:
         traceback.print_exc()
-        path = os.path.join("./data", uuid.uuid1())
+        path = os.path.join("./data", uuid.uuid1().hex)
         os.mkdir(path)
     chars = char_dict.keys()
     for char in chars:
-        txt = Image.new('RGBA', (36, 36), )
+        base = Image.new('RGBA', image_dim, (255, 255, 255, 0))
+        txt = Image.new('RGBA', image_dim, (255, 255, 255, 0))
+        d = ImageDraw.Draw(txt)
+        d.text((0, 0), char, font=font, fill=(0, 0, 0, 255))
+        out = Image.alpha_composite(base, txt)
+        out = out.convert("L")
+        out.save(os.path.join(path, "{}.png".format(char)))
+    return path
 
+
+def image2matrix(filename):
+    im = Image.open(filename)
+    width, height = im.size
+    im = im.convert("L")
+    data = im.getdata()
+    data = np.matrix(data, dtype='float') / 255.0
+    new_data = np.reshape(data, (height, width))
+    return new_data
