@@ -34,16 +34,16 @@ class Img2Vec:
         print(font_path)
         return build_char_data(char_dict, image_dim, self.font_path)
 
-    def _train(self, data_path, fname):
+    def _train(self, data_path):
         result = []
         if self.method == "pca":
-            result = pca(self.embedding_dim, data_path=data_path, fname=fname)
+            result = pca(self.embedding_dim, data_path=data_path)
         elif self.method == "autoencoder":
-            result = autoencoder(self.embedding_dim, data_path=data_path, fname=fname)
+            result = autoencoder(self.embedding_dim, data_path=data_path)
         assert result is not None
         return result
 
-    def fit(self, data, fname, embedding_dim=None, method=None):
+    def fit(self, data, embedding_dim=None, method=None):
         if embedding_dim is not None:
             self.embedding_dim = embedding_dim
         if method is not None:
