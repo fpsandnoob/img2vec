@@ -1,12 +1,8 @@
 from utils import *
 from model.autoencoder import autoencoder
 from model.pca import pca
+from traceback import print_exc
 import os
-
-
-# TODO(hlc): autoencoder.
-# TODO(hlc): load pretrained model 3.return embedding.
-# TODO(hlc): return embedding
 
 
 class Img2Vec:
@@ -16,6 +12,9 @@ class Img2Vec:
         self.image_dim = (36, 36)
         self._method = ["pca", "autoencoder"]
         self.font_path = "./fonts/NotoSansCJKsc-Regular.otf"
+        self._data = None
+        self._loaded = False
+        self.pretrained_embedding = r"pretrained/pca.npy"
 
     def build_char_dataset(self, char_dict, image_dim=None, language=None, font_path=None):
         if image_dim is not None:
@@ -34,12 +33,12 @@ class Img2Vec:
         print(font_path)
         return build_char_data(char_dict, image_dim, self.font_path)
 
-    def _train(self, data_path):
+    def _train(self, data):
         result = []
         if self.method == "pca":
-            result = pca(self.embedding_dim, data_path=data_path)
+            result = pca(self.embedding_dim, data)
         elif self.method == "autoencoder":
-            result = autoencoder(self.embedding_dim, data_path=data_path)
+            result = autoencoder(self.embedding_dim, data)
         assert result is not None
         return result
 
@@ -56,21 +55,49 @@ class Img2Vec:
         if self.method not in self._method:
             raise ValueError("{} is not supported!".format(self.method))
         if data is not None:
-            if not isinstance(data, str):
-                raise TypeError("The path of images must be string not {}!".format(type(data)))
-            if not os.path.exists(data):
-                raise OSError("{} does not exist!".format(data))
-        if fname is not None:
-            if not isinstance(fname, str):
-                raise TypeError("The path of font must be string not {}!".format(type(fname)))
+            if not isinstance(data, list):
+                raise TypeError("The matrices of images must be list not {}!".format(type(data)))
+        else:
+            raise ValueError("Data should not be Null!")
+        self._data = self._train(data)
+        self._loaded = True
 
-        self._train(data, fname)
+    def fit_transform(self, data, embedding_dim=None, method=None):
+        self.fit(data, embedding_dim, method)
+        if self._loaded:
+            return self._data
 
-    def load(self):
-        pass
+    @staticmethod
+    def _read_dir(path):
+        data = []
+        files = os.listdir(path)
+        for f in files:
+            data.append(image2matrix(f))
+        return data
 
-    def save(self):
-        pass
+    def read_img_from_dir(self, path):
+        self._check_path(path)
+        return self._read_dir(path)
 
-    def wv(self):
-        pass
+    @staticmethod
+    def _check_path(path):
+        if path is not None:
+            if not isinstance(path, str):
+                raise TypeError("The path must be string not {}!".format(type(path)))
+        else:
+            raise ValueError("Path should not be Null!")
+
+    def load(self, path):
+        try:
+            self._check_path(path)
+        except ValueError:
+            path = self.pretrained_embedding
+        np.load(path, self._data)
+        self._loaded = True
+
+    def save(self, path):
+        self._check_path(path)
+        if self._loaded:
+            np.save(path, self._data)
+        else:
+            raise ValueError("Data is Null, can't be exported!")
